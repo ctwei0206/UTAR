@@ -52,9 +52,8 @@ dialogue_css = """
 </style>
 """
 
-
-# Initialize OpenAI client
 client = OpenAI(api_key=st.secrets['OPENAI_API_KEY'])
+genai.configure(api_key=st.secrets['GOOGLE_API_KEY'])
 
 # Function to load custom CSS
 def load_css(file_name):
@@ -66,86 +65,111 @@ load_css("style.css")
 # Sidebar navigation menu
 with st.sidebar:
     selected = option_menu("Baby Care Assistant", [
-        "Home", "Baby Food Care", "Home Safety", "Sleeping Monitor",
-        "Voice Analysis", "Parenting Tips", "Calendar Reminder"
+        "Sign Up", 
+        "Login", 
+        "Baby Food Care", 
+        "Home Safety", 
+        "Sleeping Monitor",
+        "Voice Analysis", 
+        "Parenting Tips", 
+        "Calendar Reminder"
     ],
-    icons=["house", "check-circle", "shield-lock", "moon", "mic", "lightbulb", "calendar"],
+    icons=["person-add", "person", "check-circle", "shield-lock", "moon", "mic", "lightbulb", "calendar"],  # Updated icons
     default_index=0)
 
-
-# LOGIN PAGE--------------------------------------------------
-if selected == "Home":
+# SIGNUP PAGE--------------------------------------------------
+if selected == "Sign Up":
     st.markdown(dialogue_css, unsafe_allow_html=True)
     st.markdown('<div class="dialogue">Welcome to Baby Care Assistant</div>', unsafe_allow_html=True)
-    st.markdown('<h1 style="font-family:\'Times New Roman\'; font-size:280%;">Welcome to Baby Care Assistant</h1>',unsafe_allow_html=True)
-    st.markdown('<h1 style="font-family:\'Times New Roman\'; font-size:250%;">Login Form</h1>',unsafe_allow_html=True)
+    st.markdown(
+        '<h1 style="font-family:\'Times New Roman\'; font-size:250%; color:#CAF0F8; text-decoration:underline;">SIGN UP</h1>',
+        unsafe_allow_html=True
+    )
 
-    # Guardian details
-    st.markdown('<p style="font-family:\'Times New Roman\';font-size:150%">Guardian Information</p>',unsafe_allow_html=True)
-    guardian_name = st.text_input('Guardian Name')
-    relationship = st.radio('Relationship with Baby', ['MOM', 'DAD', 'UNCLE', 'AUNTY', 'OTHERS'])
-    email = st.text_input('Email Address')
+    # Initialize session state for storing user data
+    if 'user_data' not in st.session_state:
+        st.session_state.user_data={}
 
-    # Email validation
-    if email and '@' not in email:
-        st.error("Please enter a valid email address.")
-
-    st.divider()
-
-    # Baby details
-    st.subheader('Baby Information')
-    baby_name = st.text_input('Baby Name')
-    gender = st.radio('Pick The Baby\'s Gender', ['Male', 'Female'])
-    dob = st.date_input('Baby\'s Date of Birth')  # Date of Birth input
-    age = st.slider('Baby Age (in Months)', 0, 48)
-
-    # Function to calculate age in months based on DOB
     def calculate_age_in_months(dob):
+        """Calculate age in months based on the date of birth."""
         today = datetime.today()
         age_in_months = (today.year - dob.year) * 12 + today.month - dob.month
-        if today.day < dob.day:
-            age_in_months -= 1  # If the current day is before the birth day, subtract one month
         return age_in_months
 
-    # Age validation
-    if dob:
-        actual_age = calculate_age_in_months(dob)
-        if actual_age != age:
-            st.warning(f"The age in months does not match the birth date. Based on the date of birth, the baby's age should be {actual_age} months.")
+    def sign_up():
+        st.markdown('<p style="color:#00B4D8; font-family:\'Times New Roman\'; font-size:200%;font-weight:bold;">Mummy Information:</p>',unsafe_allow_html=True)
+        guardian_name = st.text_input("Guardian Name")
+        relationship = st.selectbox("Relationship with Baby", ["Mom", "Dad", "Uncle", "Aunty", "Others"])
+        email = st.text_input("Email Address")
 
-    # Religion selection
-    religion = st.selectbox('Religion', ['Islam', 'Christianity', 'Hinduism', 'Buddhism', 'Others'])
+        # Baby Information
+        st.markdown('<p style="color:#00B4D8; font-family:\'Times New Roman\'; font-size:200%;font-weight:bold;">Baby Information:</p>',unsafe_allow_html=True)
+        baby_name = st.text_input("Baby Name")
+        baby_gender = st.selectbox("Baby Gender", ["Male", "Female", "Other"])
+        date_of_birth = st.date_input("Date of Birth")
 
-    # Form submission
-    if st.button('Submit'):
-        # Simple validation
-        if not guardian_name or not email or not baby_name:
-            st.warning('Please fill in all required fields.')
-        else:
-            with st.spinner('Submitting...'):
-                time.sleep(2)  # Simulate a delay for submission
-            st.success(f'Form submitted successfully! \n Welcome {baby_name}!')
-            st.balloons()
+        if st.button("Sign Up"):
+            # Check if email already exists
+            if email in st.session_state.user_data:
+                st.error("Email already registered. Please log in.")
+            else:
+                # Calculate age in months
+                age_in_months = calculate_age_in_months(date_of_birth)
 
-            # Optionally display submitted information
-            st.write("### Submission Details")
-            st.write(f"Guardian Name: {guardian_name}")
-            st.write(f"Relationship with Baby: {relationship}")
-            st.write(f"Email: {email}")
-            st.write(f"Baby Name: {baby_name}")
-            st.write(f"Gender: {gender}")
-            st.write(f"Religion: {religion}")
-            st.write(f"Date of Birth: {dob}")
-            st.write(f"Age: {age} months")
+                # Store user data in the session state dictionary
+                st.session_state.user_data[email] = {
+                    'guardian_name': guardian_name,
+                    'relationship': relationship,
+                    'baby_name': baby_name,
+                    'baby_gender': baby_gender,
+                    'date_of_birth': date_of_birth,
+                    'month': date_of_birth.strftime("%B"),
+                    'age_in_months': age_in_months  # Store calculated age in months
+                }
+                st.success("Sign Up Successful! You can now log in.")
+                st.balloons()  # Add balloon effect
 
+    st.write(sign_up())
+
+# LOGIN PAGE------------------------------------------------------
+elif selected=="Login":
+    st.markdown(
+        '<h1 style="font-family:\'Times New Roman\'; font-size:250%; color:#CAF0F8; text-decoration:underline;">LOGIN</h1>',
+        unsafe_allow_html=True
+    )
+
+    # Initialize session state for storing user data
+    if 'user_data' not in st.session_state:
+        st.session_state.user_data={}
+
+    def login():
+        email = st.text_input("Email Address")
+
+        if st.button("Login"):
+            if email in st.session_state.user_data:
+                user_info = st.session_state.user_data[email]
+                st.success(f"Login Successful! Welcome back, {user_info['guardian_name']}!")
+                st.write(f"Baby Name: {user_info['baby_name']}")
+                st.write(f"Baby Gender: {user_info['baby_gender']}")
+                st.write(f"Date of Birth: {user_info['date_of_birth']}")
+                st.write(f"Month: {user_info['month']}")
+                st.write(f"Age: {user_info['age_in_months']} months")  # Display age in months
+                st.balloons()  # Add balloon effect
+            else:
+                st.error("Email not found. Please sign up first.")
+
+    st.write(login())
 
 
 # BABY FOOD CARE PAGE-----------------------------------------
 elif selected == "Baby Food Care":
-    st.markdown('<h1 style="font-family:\'Times New Roman\'; font-size:250%;color:#CAF0F8">BABY FOOD CARE</h1>',unsafe_allow_html=True)
+    st.markdown(
+        '<h1 style="font-family:\'Times New Roman\'; font-size:250%; color:#CAF0F8; text-decoration:underline;">BABY FOOD CARE</h1>',
+        unsafe_allow_html=True
+    )
+
 
     # Initialize Gemini food_care_model
-    genai.configure(api_key=st.secrets['GOOGLE_API_KEY'])
     food_care_model = genai.GenerativeModel("gemini-1.5-flash",
                                             system_instruction="""
                                     You are a baby care assistant. 
@@ -209,7 +233,7 @@ elif selected == "Baby Food Care":
         food_description = st.text_input("Describe food:")
 
     # Input for baby's age
-    st.markdown('<p style="font-family:\'Times New Roman\'; font-size:200%;">Baby\'s Age:</p>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#00B4D8; font-family:\'Times New Roman\'; font-size:200%;font-weight:bold;">Baby\'s Age:</p>',unsafe_allow_html=True)
     baby_age = st.number_input("Enter in months:",
                                min_value=0,
                                max_value=48,
@@ -230,7 +254,10 @@ elif selected == "Baby Food Care":
 
 # HOME SAFETY PAGE---------------------------------------
 elif selected == "Home Safety":
-    st.markdown('<h1 style="font-family:\'Times New Roman\'; font-size:280%;">BABY HOME SAFETY</h1>',unsafe_allow_html=True)
+    st.markdown(
+        '<h1 style="font-family:\'Times New Roman\'; font-size:250%; color:#CAF0F8; text-decoration:underline;">BABY HOME SAFETY </h1>',
+        unsafe_allow_html=True
+    )
 
     home_safety_model = genai.GenerativeModel(
         "gemini-1.5-flash",
@@ -271,7 +298,7 @@ elif selected == "Home Safety":
 
 # SLEEPING MONITOR PAGE-----------------------------------------
 elif selected == "Sleeping Monitor":
-    st.markdown('<h1 style="font-family:\'Times New Roman\'; font-size:280%;">SLEEPING MONITORr</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 style="font-family:\'Times New Roman\'; font-size:250%; color:#CAF0F8; text-decoration:underline;">SLEEPING MONITOR</h1>', unsafe_allow_html=True)
 
     baby_sleeping_model = genai.GenerativeModel("gemini-1.5-flash",
                                   system_instruction="""
@@ -305,7 +332,7 @@ elif selected == "Sleeping Monitor":
         return response.choices[0].message.content
 
     # Baby Sleeping Analyst Title
-    st.markdown('<p style="font-family:\'Times New Roman\'; font-size:200%;">Baby Sleeping Analyst</p>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#00B4D8; font-family:\'Times New Roman\'; font-size:200%;font-weight:bold;">Baby Sleeping Analyst:</p>',unsafe_allow_html=True)
 
     # Handle input based on user selection
     uploaded_image = st.file_uploader("Choose a sleeping position image", type=["jpg", "jpeg", "png"])
@@ -321,11 +348,11 @@ elif selected == "Sleeping Monitor":
         baby_pattern_description = img_description.text  # This should be the text description of the sleeping pattern
 
     # Input for baby's age
-    st.markdown('<p style="font-family:\'Times New Roman\'; font-size:200%;">Baby\'s age: </p>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#00B4D8; font-family:\'Times New Roman\'; font-size:200%;font-weight:bold;">Baby\'s Age:</p>',unsafe_allow_html=True)
     baby_age = st.number_input("in months:", min_value=0, max_value=48, step=1)
 
     # Input for sleeping time
-    st.markdown('<p style="font-family:\'Times New Roman\'; font-size:200%;">Sleeping Time: </p>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#00B4D8; font-family:\'Times New Roman\'; font-size:200%;font-weight:bold;">Sleeping Time:</p>',unsafe_allow_html=True)
     baby_sleeping_time = st.number_input("in hours:", min_value=0, max_value=24, step=1)
 
     # Submit button to run the function
@@ -344,11 +371,17 @@ elif selected == "Sleeping Monitor":
 
 # VOICE ANALYSIS PAGE-----------------------------------------------
 elif selected == "Voice Analysis":
-    st.markdown('<h1 style="font-family:\'Times New Roman\'; font-size:280%;">VOICE ANALYSIS</h1>', unsafe_allow_html=True)
+    st.markdown(
+        '<h1 style="font-family:\'Times New Roman\'; font-size:250%; color:#CAF0F8; text-decoration:underline;">VOICE ANALYSIS</h1>',
+        unsafe_allow_html=True
+    )
 
 # PARENTING TIPS PAGE------------------------------------------------
 elif selected == "Parenting Tips":
-    st.markdown('<h1 style="font-family:\'Times New Roman\'; font-size:280%;">PARENTING TIPS</h1>',unsafe_allow_html=True)
+    st.markdown(
+        '<h1 style="font-family:\'Times New Roman\'; font-size:250%; color:#CAF0F8; text-decoration:underline;">PARENTING TIPS</h1>',
+        unsafe_allow_html=True
+    )
 
     parenting_tips_model = genai.GenerativeModel(
         "gemini-1.5-flash",
@@ -370,7 +403,7 @@ elif selected == "Parenting Tips":
         return response.text.strip()
 
     # Streamlit layout for uploading and displaying the image
-    st.markdown('<p style="font-family:\'Times New Roman\'; font-size:200%;">Parenting Assistant </p>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#00B4D8; font-family:\'Times New Roman\'; font-size:180%;font-weight:bold;">Parenting Assistant:</p>',unsafe_allow_html=True)
 
     # Dictionary to hold all recommendations and user inputs
     user_data = {}
@@ -429,7 +462,7 @@ elif selected == "Parenting Tips":
     # Divider for exercise recommendations
     st.divider()
     # Ask if the user needs exercise recommendations
-    st.markdown('<p style="font-family:\'Times New Roman\'; font-size:150%;">Do you need any exercise recommendations for yourself as a mom? </p>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#00B4D8; font-family:\'Times New Roman\'; font-size:180%;font-weight:bold;">Do you need any exercise recommendations for yourself as a mom?</p>',unsafe_allow_html=True)
     exercise_needed = st.radio("", ("Yes", "No"))  # No label for the radio buttons
 
     # Provide exercise recommendations based on pregnancy month if they say yes
@@ -455,7 +488,7 @@ elif selected == "Parenting Tips":
 
     # Input text or image section
     st.divider()
-    st.markdown('<p style="font-family:\'Times New Roman\'; font-size:150%;">Check list that already bought for Baby: </p>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#00B4D8; font-family:\'Times New Roman\'; font-size:180%;font-weight:bold;">Check list that already bought for Baby:</p>',unsafe_allow_html=True)
     st.write("Please let us know if you have prepared everything adequately!")
 
     # Text input for user feedback
@@ -477,7 +510,8 @@ elif selected == "Parenting Tips":
 
 # CALENDER REMINDER-----------------------------------------
 elif selected == "Calendar Reminder":
-    st.markdown('<h1 style="font-family:\'Times New Roman\'; font-size:280%;">FEEDING & VACCINATION TRACKER</h1>',unsafe_allow_html=True)
+    st.markdown(
+        '<h1 style="font-family:\'Times New Roman\'; font-size:250%; color:#CAF0F8; text-decoration:underline;">FEEDING & VACCINATION TRACKER</h1>', unsafe_allow_html=True)
     st.markdown("Set reminders for important events related to your baby.")
 
     # Create an empty DataFrame to store feeding and vaccination records
@@ -494,9 +528,7 @@ elif selected == "Calendar Reminder":
     def calculate_next_feeding(current_time, interval_hours):
         return current_time + timedelta(hours=interval_hours)
 
-    st.divider()
-    # Input section for feeding details
-    st.markdown('<p style="font-family:\'Times New Roman\'; font-size:180%;">Feeding Schedule: </p>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#00B4D8; font-family:\'Times New Roman\'; font-size:200%;font-weight:bold;">Feeding Schedule:</p>',unsafe_allow_html=True)
     feeding_time_input = st.time_input("Enter feeding time (HH:MM)", value=st.session_state.feeding_time)
     feeding_interval = st.number_input("Enter feeding interval (in hours)", min_value=1, max_value=12, step=1)
 
@@ -513,7 +545,7 @@ elif selected == "Calendar Reminder":
 
     st.divider()
     # Input section for vaccination details
-    st.markdown('<p style="font-family:\'Times New Roman\'; font-size:180%;">Vaccination Schedule: </p>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#00B4D8; font-family:\'Times New Roman\'; font-size:200%;font-weight:bold;">Vaccination Schedule:</p>',unsafe_allow_html=True)
     vaccination_date_input = st.date_input("Enter vaccination date", value=datetime.today())
     vaccination_time_input = st.time_input("Enter vaccination time (HH:MM)", value=st.session_state.vaccination_time)
 
@@ -525,13 +557,12 @@ elif selected == "Calendar Reminder":
         st.session_state.vaccination_time = vaccination_time_input
 
     st.divider()
-    # Display the records table
-    st.markdown('<p style="font-family:\'Times New Roman\'; font-size:180%;">Records: </p>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#00B4D8; font-family:\'Times New Roman\'; font-size:200%;font-weight:bold;">Records:</p>',unsafe_allow_html=True)
     st.write(st.session_state.records)
 
     # Provide reminders
     if st.session_state.records.shape[0] > 0:
-        st.header("Reminders")
+        st.markdown('<p style="font-family:\'Times New Roman\'; font-size:180%;font-weight:bold;">Reminders</p>',unsafe_allow_html=True)
         now = datetime.now()
         for index, row in st.session_state.records.iterrows():
             if row["Type"] == "Feeding":
@@ -548,11 +579,6 @@ elif selected == "Calendar Reminder":
 
     st.divider()
     # Option to download the records as a CSV file
-    st.markdown('<p style="font-family:\'Times New Roman\'; font-size:180%;">Click to Download Records: </p>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#00B4D8; font-family:\'Times New Roman\'; font-size:200%;font-weight:bold;">Click to Download Records:</p>',unsafe_allow_html=True)
     csv = st.session_state.records.to_csv(index=False).encode('utf-8')
     st.download_button("Download Records as CSV", csv, "feeding_vaccination_records.csv", "text/csv", key='download-csv')
-
-    st.divider()
-    # Calendar visualization placeholder (you would implement this separately)
-    st.markdown('<p style="font-family:\'Times New Roman\'; font-size:180%;">Calendar Visualization (to be implemented) </p>',unsafe_allow_html=True)
-    st.write("This section would show a calendar with feeding and vaccination times marked.")
