@@ -54,7 +54,7 @@ dialogue_css = """
 
 
 # Initialize OpenAI client
-client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
+client = OpenAI(api_key=st.secrets['OPENAI_API_KEY'])
 
 # Function to load custom CSS
 def load_css(file_name):
@@ -145,7 +145,7 @@ elif selected == "Baby Food Care":
     st.markdown('<h1 style="font-family:\'Times New Roman\'; font-size:250%;color:#CAF0F8">BABY FOOD CARE</h1>',unsafe_allow_html=True)
 
     # Initialize Gemini food_care_model
-    genai.configure(api_key=os.environ['GOOGLE_API_KEY'])
+    genai.configure(api_key=st.secrets['GOOGLE_API_KEY'])
     food_care_model = genai.GenerativeModel("gemini-1.5-flash",
                                             system_instruction="""
                                     You are a baby care assistant. 
